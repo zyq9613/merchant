@@ -1,16 +1,16 @@
 <template>
 	<el-dialog :close-on-click-modal="false" :title="addType == 2 ? '新建视频计划' : '新建直播计划'" :visible.sync="dialogVisible" :modal="false" :top="'100px'"  :fullscreen="isScreen" :width="'600px'" @close="onclose">
-		<div class="form-wrapper flex w-full flex-1 space-x-48">
-			<el-form class="w-3/5" ref="addPlan" v-if="isVideoUpload" :model="addPlanData" size="small" :rules="rules">
+		<div v-if="isVideoUpload" class="form-wrapper flex w-full flex-1 space-x-48">
+			<el-form class="w-3/5" ref="addPlan"  :model="addPlanData" size="small" :rules="rules">
 				<el-form-item prop="title" label="标题" :label-width="formLabelWidth">
 					<el-input v-model="addPlanData.title" placeholder="请输入标题"></el-input>
 				</el-form-item>
 
-				<el-form-item v-if="!videoFileList" prop="replayurl" label="视频URL" :label-width="formLabelWidth">
+				<!-- <el-form-item v-if="!videoFileList" prop="replayurl" label="视频URL" :label-width="formLabelWidth">
 					<el-input v-model="addPlanData.replayurl" placeholder="请输入视频URL或者上传视频"></el-input>
-				</el-form-item>
+				</el-form-item> -->
 
-				<el-form-item v-if="!addPlanData.replayurl" prop="video" label="上传视频" :label-width="formLabelWidth">
+				<!-- <el-form-item v-if="!addPlanData.replayurl" prop="video" label="上传视频" :label-width="formLabelWidth">
 					<div class="flex justify-between ">
 						<el-upload
 						class="w-ful block flex-1"
@@ -23,16 +23,18 @@
 						:on-exceed="hanldeExceed"
 						>
 						<el-button size="small" type="primary" @click="uploadType = 1">点击上传</el-button>
-						<!-- <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div> -->
 						</el-upload>
 						<el-progress v-if="showProgress&& uploadType == 1" class="w-1/2 block mt-2" :percentage="percentage"></el-progress>
 					</div>
 
-				</el-form-item>
+				</el-form-item> -->
 
 				<el-form-item prop="liveCover" label="上传封面" :label-width="formLabelWidth">
 					<div class="flex justify-between ">
 						<el-upload
+						:accept="'image/png, image/jpeg, image/jpg'"
+						v-if="!isUploadPic"
+						list-type="picture-card"
 						class="w-ful block flex-1"
 						action=""
 						:on-remove="handleRemove"
@@ -41,27 +43,25 @@
 						:limit="1"
 						:on-exceed="hanldeExceed"
 						>
-						<el-button size="small" type="primary" @click="uploadType = 2">点击上传</el-button>
+						<i class="el-icon-plus"></i>
+						<!-- <el-button size="small" type="primary" @click="uploadType = 2">点击上传</el-button> -->
 						<!-- <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div> -->
 						</el-upload>
-						<el-progress v-if="showProgress && uploadType == 2" class="w-1/2 block mt-2" :percentage="percentage"></el-progress>
+						<div class="relative img-wrapper w-148px h-148px flex items-center justify-center" v-if="isUploadPic">
+							<el-progress v-if="isUploadPic && percentage < 100" type="circle" :percentage="percentage"></el-progress>
+							 <el-image :preview-src-list="[liveCover]" :src="liveCover" v-if="liveCover !== ''"></el-image>
+							 <div
+					          v-if="liveCover !== ''"
+					          class=" del-btn absolute w-full h-20px bottom-0 left-0 flex justify-center items-center"
+					          @click="handleRemove(file)"
+					        >
+					          <i class="el-icon-delete"></i>
+					        </div>
+						</div>
+						<!-- <el-progress v-if="showProgress && uploadType == 2" class="w-1/2 block mt-2" :percentage="percentage"></el-progress> -->
 					</div>
 
 				</el-form-item>
-
-			    <!-- <el-form-item prop="liveCover" label="封面上传" :label-width="formLabelWidth">
-			    	<el-upload
-						  action=""
-		          :on-remove="handleRemove"
-		          :http-request="handleUpload"
-		          :before-upload="beforeAvatarUpload"
-						  :on-success="handleUpload"
-						  :limit="1"
-						  :on-exceed="hanldeExceed"
-					  	>
-					  <el-button size="small" type="primary">点击上传</el-button>
-					</el-upload>
-				</el-form-item> -->
 				<el-form-item prop="showType" label="直播类型" :label-width="formLabelWidth">
 					<el-radio v-model="addPlanData.showType" label="0">横屏</el-radio>
 					<el-radio v-model="addPlanData.showType" label="1">竖屏</el-radio>
@@ -208,13 +208,26 @@
 					  </el-form-item>
 
 				</template>
+				<div class="flex justify-center">
+					<el-button @click="dialogFormVisible = false">取 消</el-button>
+					<el-button type="primary" v-loading="isLoading" @click="handleAddPlan">确 定</el-button>
+				</div>
+				
 			</el-form>
-			<div class="iphone w-300px relative">
+			<div class="fixed iphone w-300px right-20">
 				<img src="../../../../assets/common/ipnone.png" alt="">
-				<div class="absolute w-100px top-3/10 left-1/2 -ml-50px flex flex-col items-center">
+				<div v-if="!isUploadSuccess" class="absolute w-200px top-3/10 left-1/2 -ml-100px flex flex-col items-center">
 					<svg-icon icon-class="logo-2" class="text-5xl mb-4" /> 
 					<span class="text-base">正在上传中</span>
-					<el-progress :percentage="12"></el-progress>
+					<el-progress class="w-full mt-5" :text-inside="true" :stroke-width="15" :percentage="videoPercentage"></el-progress>
+				</div>
+				<div v-if="isUploadSuccess" class="absolute px-3 top-0 w-full h-full flex items-center">
+					<video autoplay="true" loop="true" :src="videoFileUrl"></video>
+					<div class="absolute bottom-8 left-6 right-6">
+						<span class="text-sm">@ 一个很酷的人</span>
+						<div class="mt-1">{{addPlanData.title ? addPlanData.title : "视频标题"}}</div>
+					</div>
+					
 				</div>
 			</div>
 		</div>
@@ -224,7 +237,7 @@
 			  :accept="'video/mp4,video/x-m4v,video/*'"
 			  class="upload-demo w-ful"
 			  drag
-			  :before-upload="beforeAvatarUpload"
+			  :before-upload="beforeVideoUpload"
 			  :http-request="hadleUploadVideo"
 			  action="">
 			  <i class="el-icon-upload"></i>
@@ -234,10 +247,6 @@
 
 			  <div class="el-upload__tip text-sm font-semibold pink" slot="tip">* 只能上传常用视频格式，推荐使用mp4、webm</div>
 			</el-upload>
-		</div>
-		<div slot="footer" class="dialog-footer">
-			<el-button @click="dialogFormVisible = false">取 消</el-button>
-			<el-button type="primary" v-loading="isLoading" @click="handleAddPlan">确 定</el-button>
 		</div>
 	</el-dialog>
 </template>
@@ -259,17 +268,23 @@
 			}
 		},
 		data(){
-			const validateVideo = (rule, value, callback) => {
-				if (!this.videoFileList) {
-					callback('请上传视频或者输入视频链接')
+			const validateLivecover = (rule, value, callback) => {
+				console.log(this.liveCoverFilelist)
+				if (!this.liveCoverFilelist) {
+					callback('请上传封面')
 				}else{
 					callback()
 				}
 			}
 			return{
-				isVideoUpload:true,
-				isScreen:true,
-				isFormShow:false,
+				liveCover:'',
+				isUploadPic:false,
+				isUploadSuccess:false,
+				videoFileUrl:'',
+				videoPercentage:0,
+				isVideoUpload:false,
+				isScreen:false,
+				isFormShow:true,
 				pickerOptions:{
 					disabledDate(time) {
 	            		return time.getTime() < Date.now() - 8.64e7;//如果没有后面的-8.64e7就是不可以选择今天的 
@@ -277,13 +292,13 @@
 	            },
 				uploadType:1,//上传状态   1为上传视频 2为上传封面
 				liveCover:'',
-				videoFileUrl:'',
 				type:2,
 				random:Date.parse(new Date()),
 				isDisabled:false,
 				showProgress:false,
 				percentage:0,
 				videoFileList:'',
+				liveCoverFilelist:"",
 				isLoading:false,
 				// fileList:[],
 				formLabelWidth:'120px',
@@ -328,9 +343,9 @@
 					// video:[
 					// 	{required: true,trigger: 'change'}
 					// ],
-					// question:[
-					// 	{required: true,validator: validatequestion,trigger: 'change'}
-					// ],
+					liveCover:[
+						{validator: validateLivecover ,trigger: 'change'}
+					],
 					envelopeAmount:[
 					{required: true,message: '请输入红包金额',trigger: 'blur'}
 					],
@@ -372,7 +387,7 @@
 					console.log(valid)
 					if (valid) {
 						this.isLoading = true; 
-						this.addPlanData.replayurl = this.addPlanData.replayurl || this.videoFileUrl;
+						this.addPlanData.replayurl = this.videoFileUrl;
 						this.addPlanData.liveCover = this.liveCover;
 						this.addPlanData.openReplay = this.addPlanData.openReplay ? 1 : 0;
 						this.addPlanData.openIm = this.addPlanData.openIm ? 1 : 0;
@@ -393,7 +408,8 @@
 								this.isLoading = false;
 								this.dialogVisible = false;
 								this.$refs.addPlan.resetFields()
-
+								this.videoFileUrl = '';
+								this.liveCover = ''
 								this.$emit('isGet')
 							}
 						})
@@ -409,11 +425,17 @@
 					this.addPlanData.topics.splice(index, 1)
 				}
 			},
-			beforeAvatarUpload (file) {
+			beforeVideoUpload (file) {
 				this.videoFileList = file
 			},
+			beforeAvatarUpload (file) {
+				this.liveCoverFilelist = file
+			},
 			handleRemove(file){
+				this.liveCover = '';
 				this.videoFileList = '';
+				this.liveCoverFilelist = '';
+				this.isUploadPic = false
 			},
 			hadleUploadVideo(e){
 				console.log(e)
@@ -433,6 +455,7 @@
 			        },
 			        onProgress: progressData => { 
 			      	/* 非必须 */
+			      	this.videoPercentage = parseInt(progressData.percent * 100);
 			      		console.log(progressData)
 			      	  // this.showProgress = true;
 		      		  // this.percentage = progressData.percent * 100;
@@ -444,48 +467,51 @@
 			    	if (err) {
 			    		console.log(err)
 			    	}else{
-			    		console.log(data)
+			    		this.videoFileUrl = 'https://' + data.Location;
+			    		this.isUploadSuccess = true
 			    	}
 			    })
 			},
 			handleUpload(e){
-				// upload1(this.videoFileList,res => {
-				// 	console.log('res',res)
-				// })
 				let uploadFileName = Date.parse(new Date());
 				cos.uploadFile({
 					Bucket: 'redenlops01-1313983242', /* 填写自己的bucket，必须字段 */
 					Region: 'ap-guangzhou',     /* 存储桶所在地域，必须字段 */
-					Key: uploadFileName + '-' + this.videoFileList.name,              /* 存储在桶里的对象键（例如1.jpg，a/b/test.txt），必须字段 */
-			      Body: this.videoFileList, // 上传文件对象
-			      SliceSize: 1024 * 1024 * 5,     /* 触发分块上传的阈值，超过5MB使用分块上传，小于5MB使用简单上传。可自行设置，非必须 */
-			      onProgress: progressData => { 
-			      	/* 非必须 */
-			      	this.showProgress = true;
-			      	this.percentage = progressData.percent * 100;
-			      },
-			      onFileFinish: (err, data, options) => {   /* 非必须 */
+					Key: uploadFileName + '-' + this.liveCoverFilelist.name,              /* 存储在桶里的对象键（例如1.jpg，a/b/test.txt），必须字段 */
+			      	Body: this.liveCoverFilelist, // 上传文件对象
+			      	SliceSize: 1024 * 1024 * 5,     /* 触发分块上传的阈值，超过5MB使用分块上传，小于5MB使用简单上传。可自行设置，非必须 */
+			       onTaskReady:taskId => {
+			        	if (taskId) {
+			        		this.isUploadPic = true;
+			        	}
+			        },
+			      	onProgress: progressData => { 
+				      	/* 非必须 */
+				      	this.showProgress = true;
+				      	this.percentage = progressData.percent * 100;
+				      },
+				      onFileFinish: (err, data, options) => {   /* 非必须 */
 
-			      },
-			  },(err, data) =>  {
-			  	console.log(data)
-			  	if (err) {
-			  		console.log(err)
-			  	} else {
-			  		console.log(this.uploadType)
-			  		this.uploadType == 1 ? this.videoFileUrl = 'https://' + data.Location : this.liveCover = 'https://' + data.Location
-			  		setTimeout(() => {
-			  			Message({
-			  				message: `${this.uploadType == 1 ? '上传视频成功' : '上传封面成功'}`,
-			  				type: 'success',
-			  				duration: 5 * 1000
-			  			})
-			  			this.showProgress = false
-				              // this.isDisabled = true;
-				              this.percent = 0
-				          }, 1000)
-			  	}
-			  })
+				      },
+				  },(err, data) =>  {
+				  	console.log(data)
+				  	if (err) {
+				  		console.log(err)
+				  	} else {
+				  		this.liveCover = 'https://' + data.Location;
+				  		this.isUploadPic = true
+				  		setTimeout(() => {
+				  			Message({
+				  				message: `上传封面成功`,
+				  				type: 'success',
+				  				duration: 5 * 1000
+				  			})
+				  			this.showProgress = false
+					              // this.isDisabled = true;
+			              	this.percent = 0
+					          }, 1000)
+				  	}
+				  })
 			}
 		}
 	}
@@ -503,6 +529,16 @@
 	.iphone{
 		span{
 			color: #fff;
+		}
+	}
+	.img-wrapper{
+		background: #eaeaea;
+		.del-btn{
+			background:rgba(0,0,0,.3);
+			color: #fff;
+			i{
+				cursor: pointer;
+			}
 		}
 	}
 </style>

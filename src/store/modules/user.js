@@ -1,7 +1,7 @@
-import { login, logout, getInfo } from '@/api/user'
+import { login, logout, getInfo,verLogin } from '@/api/user'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 import { resetRouter } from '@/router'
-
+import qs from 'qs'
 const getDefaultState = () => {
   return {
     token: getToken(),
@@ -42,7 +42,20 @@ const actions = {
       })
     })
   },
-
+  //验证码登录
+  verificationLogin({commit},userInfo){
+    const { iphone,vCode,shareCode } = userInfo;
+    return new Promise((resolve, reject) => {
+      verLogin({iphone:userInfo.iphone,vCode:userInfo.vCode,shareCode:''}).then(response => {
+        const { data } = response;
+        commit('SET_TOKEN', data.token)
+        setToken(data.token)
+        resolve()
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  },
   // get user info
   getInfo({ commit, state }) {
     return new Promise((resolve, reject) => {
@@ -66,16 +79,21 @@ const actions = {
 
   // user logout
   logout({ commit, state }) {
-    return new Promise((resolve, reject) => {
-      logout(state.token).then(() => {
-        removeToken() // must remove  token  first
-        resetRouter()
-        commit('RESET_STATE')
-        resolve()
-      }).catch(error => {
-        reject(error)
-      })
-    })
+    removeToken() // must remove  token  first
+    resetRouter()
+    commit('RESET_STATE')
+
+    //暂无接口 异步改为同步
+    // return new Promise((resolve, reject) => {
+    //   logout(state.token).then(() => {
+    //     removeToken() // must remove  token  first
+    //     resetRouter()
+    //     commit('RESET_STATE')
+    //     resolve()
+    //   }).catch(error => {
+    //     reject(error)
+    //   })
+    // })
   },
 
   // remove token

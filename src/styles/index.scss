@@ -20,7 +20,9 @@ html {
   height: 100%;
   box-sizing: border-box;
 }
-
+svg{
+  display: inline-block;
+}
 #app {
   height: 100%;
 }

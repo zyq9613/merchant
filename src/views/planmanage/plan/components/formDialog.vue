@@ -243,8 +243,10 @@
 			  <i class="el-icon-upload"></i>
 			  <div class="el-upload__text">将视频拖到此处，<em>点击上传</em></div>
 			  <div class="mt-4">或者</div>
-			  <el-input @click.stop.native="stopstop" type="text" class="w-3/5 mt-4" placeholder="输入视频URL"></el-input>
-
+			  <el-input v-model="videoFileUrl" @click.stop.native type="text" class="w-3/5 mt-4" placeholder="输入视频URL">
+			  	<el-button slot="append" icon="el-icon-search" @click="handleInputVideourl">确定</el-button>
+			  </el-input>
+			  <div class="errorText w-3/5 mt-2  text-left m-auto">{{errorText ? '* '+ errorText : errorText}}</div>
 			  <div class="el-upload__tip text-sm font-semibold pink" slot="tip">* 只能上传常用视频格式，推荐使用mp4、webm</div>
 			</el-upload>
 		</div>
@@ -269,14 +271,15 @@
 		},
 		data(){
 			const validateLivecover = (rule, value, callback) => {
-				console.log(this.liveCoverFilelist)
-				if (!this.liveCoverFilelist) {
+				console.log(this.liveCoverFilelist = '')
+				if (this.liveCover == '') {
 					callback('请上传封面')
 				}else{
 					callback()
 				}
 			}
 			return{
+				errorText:"",
 				liveCover:'',
 				isUploadPic:false,
 				isUploadSuccess:false,
@@ -370,7 +373,20 @@
 			console.log(this.$refs)
 		},
 		methods:{
-			
+			handleInputVideourl(val){
+				console.log((/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\*\+,;=.]+$/.test(this.videoFileUrl)))
+				if (!this.videoFileUrl || this.videoFileUrl == '') {
+					this.errorText = '请输入视频链接';
+					console.log((/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\*\+,;=.]+$/.test(this.videoFileUrl)))
+					
+				}else if (!(/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\*\+,;=.]+$/.test(this.videoFileUrl))) {
+					this.errorText = '请输入正确的视频链接';
+				}else{
+					this.videoFileUrl = this.videoFileUrl;
+					this.isScreen = true;
+		    		this.isVideoUpload = true
+				}
+			},
 			onclose(){
 				this.$emit('isClose');
 			},
@@ -382,7 +398,7 @@
 				})
 			},
 			handleAddPlan(){
-				
+				console.log(this.addPlanData.startTime)
 				this.$refs.addPlan.validate(valid => {
 					console.log(valid)
 					if (valid) {
@@ -391,6 +407,7 @@
 						this.addPlanData.liveCover = this.liveCover;
 						this.addPlanData.openReplay = this.addPlanData.openReplay ? 1 : 0;
 						this.addPlanData.openIm = this.addPlanData.openIm ? 1 : 0;
+						// this.addPlanData.startTime = Date.parse(this.addPlanData.startTime)
 						let data = Object.assign({
 							token:getToken(),
 							title:'12313',
@@ -499,7 +516,8 @@
 				  		console.log(err)
 				  	} else {
 				  		this.liveCover = 'https://' + data.Location;
-				  		this.isUploadPic = true
+				  		this.isUploadPic = true;
+				  		this.$refs.addPlan.validateField('liveCover')
 				  		setTimeout(() => {
 				  			Message({
 				  				message: `上传封面成功`,
@@ -540,5 +558,8 @@
 				cursor: pointer;
 			}
 		}
+	}
+	.errorText{
+		color: #ff0000;
 	}
 </style>

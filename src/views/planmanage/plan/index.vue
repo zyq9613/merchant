@@ -13,32 +13,45 @@
 	  </el-card>
 		<el-card class="mt-3">
 	  	<el-table
+	  		:row-style="{'height' : '60px'}"
 	  		class="w-full"
 	  		:header-cell-style="{background:'#fafafa'}"
-	  		border
+	  		
 		    :data="videoListData"
 		    v-loading="isLoading"
 		    style="width: 100%"
 		    >
-		    <el-table-column fixed prop="title" align="center" label="标题"></el-table-column>
-		    <!-- <el-table-column prop="name" align="center" label="视频链接"></el-table-column> -->
-		    <el-table-column prop="liveCover" align="center" label="封面链接">
+		    <el-table-column fixed prop="title" align="center" label="标题" :width='200'>
 		    	<template slot-scope="scope">
-		    		<img :src="scope.row.liveCover">
+		    		<div class="flex justify-between">
+		    			<el-image :src="scope.row.liveCover" :preview-src-list="[scope.row.liveCover]" class="h-50px w-100px">
+		    				 <div slot="error" class="image-slot">
+					        <i class="el-icon-picture-outline"></i>
+					      </div>
+		    			</el-image>
+		    			<span>{{scope.row.title}}</span>
+		    		</div>
+		    		
 		    	</template>
 		    </el-table-column>
-		    <el-table-column prop="showType" align="center" label="直播模式">
+		    <!-- <el-table-column prop="name" align="center" label="视频链接"></el-table-column> -->
+		   <!--  <el-table-column prop="liveCover" align="center" label="封面链接">
+		    	<template slot-scope="scope">
+		    		
+		    	</template>
+		    </el-table-column> -->
+		    <el-table-column prop="showType" align="center" label="直播模式" >
 		    	<template slot-scope="scope">{{scope.row.showType == 0 ? '横屏直播' : '竖屏直播'}}</template>
 		    </el-table-column>
 		    <!-- <el-table-column prop="openReplay" align="center" label="是否回放" width="80">
 		    	<template slot-scope="scope">{{scope.row.openReplay == 0 ? '开启' : '关闭'}}</template>
 		    </el-table-column> -->
-		    <el-table-column prop="openType" align="center" label="开放类型" width="80">
+		    <el-table-column prop="openType" align="center" label="开放类型" >
 		    	<template slot-scope="scope">{{scope.row.openType == 0 ? '私域' : '全平台'}}</template>
 		    </el-table-column>
 		    <!-- <el-table-column width="100" prop="problems" align="center" label="问题&答案"></el-table-column> -->
 		    <!-- <el-table-column width="120" prop="address" align="center" label="是否开启奖励"></el-table-column> -->
-		    <el-table-column prop="rewardType" align="center" label="奖励类型" width="80">
+		    <el-table-column prop="rewardType" align="center" label="奖励类型" >
 		    	<template slot-scope="scope">
 		    		{{scope.row.rewardType == 0 ? '无奖励' : (scope.row.rewardType == 1 ? '红包' : '积分')}}
 		    	</template>
@@ -55,9 +68,9 @@
 		    <!-- <el-table-column prop="address" align="center" label="是否开启聊天室"></el-table-column> -->
 		    <el-table-column fixed="right" prop="address" align="center" width="300" label="操作">
 		    	<template slot-scope="scope">
-		    		<el-link class="mx-1"  @click="detail(scope.row)">查看详情</el-link>
-		    		<el-link class="mx-1" >设置奖励</el-link>
-		    		<el-link class="mx-1"  @onClose="showHeat = false" @click="showHeat = true">设置热度</el-link>
+		    		<el-link type="primary" class="mx-1"  @click="detail(scope.row)">查看详情</el-link>
+		    		<el-link type="primary" class="mx-1" >设置奖励</el-link>
+		    		<el-link type="primary" class="mx-1"  @onClose="showHeat = false" @click="showHeat = true">设置热度</el-link>
 		    		<el-dropdown>
 						  <span class="el-dropdown-link">
 						    更多<i class="el-icon-arrow-down el-icon--right"></i>

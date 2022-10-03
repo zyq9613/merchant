@@ -1,11 +1,10 @@
 <template>
-	<el-dialog :close-on-click-modal="false" :title="addType == 2 ? '新建视频计划' : '新建直播计划'" :visible.sync="dialogVisible" :modal="false" :top="'100px'"  :fullscreen="isScreen" :width="'600px'" @close="onclose">
-		<div v-if="isVideoUpload" class="form-wrapper flex w-full flex-1 space-x-48">
+	<el-dialog :close-on-click-modal="false" :title="addType == 2 ? '新建视频计划' : '新建直播计划'" @open="handleOpen" :before-close="handleBeforeClose" :visible.sync="dialogVisible" :modal="false" :top="'100px'"  :fullscreen="screen" :width="'600px'" @close="onclose">
+		<div v-if="addPlanData.replayurl && addPlanData.replayurl !== ''" class="form-wrapper flex w-full flex-1 space-x-48">
 			<el-form class="w-3/5" ref="addPlan"  :model="addPlanData" size="small" :rules="rules">
 				<el-form-item prop="title" label="标题" :label-width="formLabelWidth">
-					<el-input v-model="addPlanData.title" placeholder="请输入标题"></el-input>
+					<el-input type="textarea" :show-word-limit="true" :autosize="{minRows: 4, maxRows: 6 }" v-model="addPlanData.title" placeholder="取一个好听的标题"></el-input>
 				</el-form-item>
-
 				<!-- <el-form-item v-if="!videoFileList" prop="replayurl" label="视频URL" :label-width="formLabelWidth">
 					<el-input v-model="addPlanData.replayurl" placeholder="请输入视频URL或者上传视频"></el-input>
 				</el-form-item> -->
@@ -48,10 +47,10 @@
 						<!-- <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div> -->
 						</el-upload>
 						<div class="relative img-wrapper w-148px h-148px flex items-center justify-center" v-if="isUploadPic">
-							<el-progress v-if="isUploadPic && percentage < 100" type="circle" :percentage="percentage"></el-progress>
-							 <el-image :preview-src-list="[liveCover]" :src="liveCover" v-if="liveCover !== ''"></el-image>
+							<el-progress v-if="(this.liveCoverFilelist || this.liveCoverFilelist != '') && percentage < 100" type="circle" :percentage="percentage"></el-progress>
+							 <el-image :preview-src-list="[addPlanData.liveCover]" :src="addPlanData.liveCover" v-if="addPlanData.liveCover && addPlanData.liveCover !== ''"></el-image>
 							 <div
-					          v-if="liveCover !== ''"
+					          v-if="addPlanData.liveCover !== ''"
 					          class=" del-btn absolute w-full h-20px bottom-0 left-0 flex justify-center items-center"
 					          @click="handleRemove(file)"
 					        >
@@ -191,11 +190,11 @@
 
 					<el-form-item v-if="addPlanData.rewardType == 1" label="红包类型" :label-width="formLabelWidth">
 						<el-radio v-model="item.type" label="1">观看时长红包</el-radio>
-						<el-radio v-model="item.type" label="3">红包雨</el-radio>
+						<el-radio v-model="item.type" label="3">答题</el-radio>
 					</el-form-item>
-					<el-form-item v-if="addPlanData.rewardType == 1" label="发送轮次" :label-width="formLabelWidth">
+					<!-- <el-form-item v-if="addPlanData.rewardType == 1" label="发送轮次" :label-width="formLabelWidth">
 						<el-input-number v-model="item.rounds" :min="1" :max="10"></el-input-number>
-					</el-form-item>
+					</el-form-item> -->
 					<el-form-item :prop="'moneyBonuses.' + index + '.cost' " :label="addPlanData.rewardType == 1 ? '红包金额' : '积分额' " :label-width="formLabelWidth" :rules="[{required: true, message: '请输入红包金额', trigger: 'blur'}]">
 						<el-input v-model="item.cost" :placeholder="addPlanData.rewardType == 1 ? '请输入红包金额' : '请输入积分额'"></el-input>
 					</el-form-item>
@@ -216,13 +215,13 @@
 			</el-form>
 			<div class="fixed iphone w-300px right-20">
 				<img src="../../../../assets/common/ipnone.png" alt="">
-				<div v-if="!isUploadSuccess" class="absolute w-200px top-3/10 left-1/2 -ml-100px flex flex-col items-center">
+				<div v-if="showProgress" class="absolute w-200px top-3/10 left-1/2 -ml-100px flex flex-col items-center">
 					<svg-icon icon-class="logo-2" class="text-5xl mb-4" /> 
 					<span class="text-base">正在上传中</span>
 					<el-progress class="w-full mt-5" :text-inside="true" :stroke-width="15" :percentage="videoPercentage"></el-progress>
 				</div>
-				<div v-if="isUploadSuccess" class="absolute px-3 top-0 w-full h-full flex items-center">
-					<video autoplay="true" loop="true" :src="videoFileUrl"></video>
+				<div v-if="addPlanData.replayurl && addPlanData.replayurl !== ''" class="absolute px-3 top-0 w-full h-full flex items-center">
+					<video autoplay="true" loop="true" :src="addPlanData.replayurl"></video>
 					<div class="absolute bottom-8 left-6 right-6">
 						<span class="text-sm">@ 一个很酷的人</span>
 						<div class="mt-1">{{addPlanData.title ? addPlanData.title : "视频标题"}}</div>
@@ -232,7 +231,7 @@
 			</div>
 		</div>
 		
-		<div class="upload-wrapper-zyq" v-if="!isVideoUpload">
+		<div class="upload-wrapper-zyq" v-if="!addPlanData.replayurl || addPlanData.replayurl == ''">
 			<el-upload
 			  :accept="'video/mp4,video/x-m4v,video/*'"
 			  class="upload-demo w-ful"
@@ -243,7 +242,7 @@
 			  <i class="el-icon-upload"></i>
 			  <div class="el-upload__text">将视频拖到此处，<em>点击上传</em></div>
 			  <div class="mt-4">或者</div>
-			  <el-input v-model="videoFileUrl" @click.stop.native type="text" class="w-3/5 mt-4" placeholder="输入视频URL">
+			  <el-input v-model="addPlanData.replayurl" @click.stop.native type="text" class="w-3/5 mt-4" placeholder="输入视频URL">
 			  	<el-button slot="append" icon="el-icon-search" @click="handleInputVideourl">确定</el-button>
 			  </el-input>
 			  <div class="errorText w-3/5 mt-2  text-left m-auto">{{errorText ? '* '+ errorText : errorText}}</div>
@@ -260,33 +259,46 @@
 	import { Message } from 'element-ui'
 	export default{
 		name:'formDialog',
-		props:['dialogFormVisible','addType'],
+		props:['dialogFormVisible','addType','editData','addOrEdit','isScreen'],
 		watch:{
+			isScreen(val){
+				this.screen = val;
+			},
+			addOrEdit(val){
+				this.isAddOrEdit = val;
+			},
 			dialogFormVisible(val){
 				this.dialogVisible = val;
+				console.log(this.addPlanData)
+				console.log(this.screen)
+
+				// console.log((this.addPlanData.replayurl && this.addPlanData.replayurl !== '') == false)
 			},
 			addType(val){
 				this.type = val;
+			},
+			editData(val){
+				this.addPlanData = val;
 			}
 		},
 		data(){
 			const validateLivecover = (rule, value, callback) => {
 				console.log(this.liveCoverFilelist = '')
-				if (this.liveCover == '') {
+				if (this.addPlanData.liveCover == '') {
 					callback('请上传封面')
 				}else{
 					callback()
 				}
 			}
 			return{
+				isAddOrEdit:0,
 				errorText:"",
-				liveCover:'',
 				isUploadPic:false,
 				isUploadSuccess:false,
-				videoFileUrl:'',
+				replayurl:'',
 				videoPercentage:0,
 				isVideoUpload:false,
-				isScreen:false,
+				screen:false,
 				isFormShow:true,
 				pickerOptions:{
 					disabledDate(time) {
@@ -294,7 +306,6 @@
 	            	}
 	            },
 				uploadType:1,//上传状态   1为上传视频 2为上传封面
-				liveCover:'',
 				type:2,
 				random:Date.parse(new Date()),
 				isDisabled:false,
@@ -305,7 +316,7 @@
 				isLoading:false,
 				// fileList:[],
 				formLabelWidth:'120px',
-				dialogVisible:this.dialogFormVisible,
+				dialogVisible:false,
 				addPlanData:{
 					title:'',
 					replayurl:'',
@@ -314,6 +325,7 @@
 					rewardType:'1',
 					showType:'1',
 					openReplay:0,
+					openIm:true,
 				// awardType:'1',
 				// envelopeType:'1',
 				topics:[
@@ -331,10 +343,10 @@
 					type:'1',
 					viewLength:0,
 					cost:'',
-					rounds:1,
 				}
 				],
 				startTime:'',
+				isReward:true,
 			},
 			rules:{
 				title:[
@@ -364,30 +376,44 @@
 			}	
 		},
 		created(){
-			console.log(this.dialogFormVisible)
 			this.type = this.addType;
 			this.visiableOrNot = this.dialogFormVisible;
 			
 		},
 		mounted(){
-			console.log(this.$refs)
+			console.log(this.screen || (this.addPlanData.replayurl && this.addPlanData.replayurl !== '') == true)
+			console.log(this.addPlanData.replayurl !== '')
+			console.log(this.addPlanData.replayurl == true)
 		},
 		methods:{
 			handleInputVideourl(val){
-				console.log((/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\*\+,;=.]+$/.test(this.videoFileUrl)))
-				if (!this.videoFileUrl || this.videoFileUrl == '') {
+				console.log((/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\*\+,;=.]+$/.test(this.replayurl)))
+				if (!this.replayurl || this.replayurl == '') {
 					this.errorText = '请输入视频链接';
-					console.log((/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\*\+,;=.]+$/.test(this.videoFileUrl)))
+					console.log((/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\*\+,;=.]+$/.test(this.replayurl)))
 					
-				}else if (!(/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\*\+,;=.]+$/.test(this.videoFileUrl))) {
+				}else if (!(/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\*\+,;=.]+$/.test(this.replayurl))) {
 					this.errorText = '请输入正确的视频链接';
 				}else{
-					this.videoFileUrl = this.videoFileUrl;
-					this.isScreen = true;
+					this.replayurl = this.replayurl;
+					this.screen = true;
 		    		this.isVideoUpload = true
 				}
 			},
+			handleOpen(){
+				if(this.isVideoUpload){
+					this.screen = true
+				}
+			},
+			handleBeforeClose(done){
+				this.addPlanData = undefined;
+				this.screen = false;
+				this.isAddOrEdit = 0;
+				this.isVideoUpload = false;
+				done()
+			},
 			onclose(){
+				// this.isUploadPic = false;
 				this.$emit('isClose');
 			},
 			hanldeExceed(){
@@ -403,8 +429,6 @@
 					console.log(valid)
 					if (valid) {
 						this.isLoading = true; 
-						this.addPlanData.replayurl = this.videoFileUrl;
-						this.addPlanData.liveCover = this.liveCover;
 						this.addPlanData.openReplay = this.addPlanData.openReplay ? 1 : 0;
 						this.addPlanData.openIm = this.addPlanData.openIm ? 1 : 0;
 						// this.addPlanData.startTime = Date.parse(this.addPlanData.startTime)
@@ -424,9 +448,7 @@
 								})
 								this.isLoading = false;
 								this.dialogVisible = false;
-								this.$refs.addPlan.resetFields()
-								this.videoFileUrl = '';
-								this.liveCover = ''
+								this.$refs.addPlan.resetFields();
 								this.$emit('isGet')
 							}
 						})
@@ -443,14 +465,16 @@
 				}
 			},
 			beforeVideoUpload (file) {
-				this.videoFileList = file
+				this.videoFileList = file;
+				console.log(this.addPlanData.replayurl)
 			},
 			beforeAvatarUpload (file) {
+
 				this.liveCoverFilelist = file
 			},
 			handleRemove(file){
-				this.liveCover = '';
-				this.videoFileList = '';
+				this.$set(this.addPlanData,'liveCover','');
+				// this.videoFileList = '';
 				this.liveCoverFilelist = '';
 				this.isUploadPic = false
 			},
@@ -466,25 +490,32 @@
 			        SliceSize: 1024 * 1024 * 5,     /* 触发分块上传的阈值，超过5MB使用分块上传，小于5MB使用简单上传。可自行设置，非必须 */
 			        onTaskReady:taskId => {
 			        	if (taskId) {
+			        		this.showProgress = true;
 			        		this.isVideoUpload = true;
-			        		this.isScreen = true
+			        		this.screen = true
+			        		this.$set(this.addPlanData,'replayurl',taskId)
 			        	}
 			        },
 			        onProgress: progressData => { 
 			      	/* 非必须 */
 			      	this.videoPercentage = parseInt(progressData.percent * 100);
-			      		console.log(progressData)
-			      	  // this.showProgress = true;
+
+			      		console.log(this.addPlanData.replayurl != '')
+			      	  
 		      		  // this.percentage = progressData.percent * 100;
 			        },
 			        onFileFinish: (err, data, options) => {   /* 非必须 */
-
+			        	this.$set(this.addPlanData,'replayurl','https://' + data.Location);
+			        	this.showProgress = false;
+			        	// this.addPlanData.replayurl = 'https://' + data.Location;
 			        }
 			    },(err,data) => {
 			    	if (err) {
 			    		console.log(err)
 			    	}else{
-			    		this.videoFileUrl = 'https://' + data.Location;
+			    		console.log(this.addPlanData.replayurl && this.addPlanData.replayurl != '')
+			    		
+			    		console.log(this.addPlanData.replayurl)
 			    		this.isUploadSuccess = true
 			    	}
 			    })
@@ -508,14 +539,14 @@
 				      	this.percentage = progressData.percent * 100;
 				      },
 				      onFileFinish: (err, data, options) => {   /* 非必须 */
-
+				      	this.$set(this.addPlanData,'liveCover','https://' + data.Location);
 				      },
 				  },(err, data) =>  {
 				  	console.log(data)
 				  	if (err) {
 				  		console.log(err)
 				  	} else {
-				  		this.liveCover = 'https://' + data.Location;
+				  		// this.addPlanData.liveCover = 'https://' + data.Location;
 				  		this.isUploadPic = true;
 				  		this.$refs.addPlan.validateField('liveCover')
 				  		setTimeout(() => {

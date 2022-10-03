@@ -24,3 +24,14 @@ export function getPlanList(data) {
     data:qs.stringify(data)
   })
 }
+// 查看列表详情
+export function getPlanInfo(data) {
+  return request({
+    url: `/private/plan/info/${data}`,
+    method: 'get',
+    // headers: {
+    //   'Content-Type': 'application/x-www-form-urlencoded'
+    // },
+    // data:qs.stringify(data)
+  })
+}
